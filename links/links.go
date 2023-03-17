@@ -15,18 +15,20 @@ func Extract(url string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
 
 	doc, err := html.Parse(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s as HTML: %v", url, err)
 	}
 
 	var links []string
+
 	visitNode := func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "a" {
 			for _, a := range n.Attr {
@@ -41,7 +43,9 @@ func Extract(url string) ([]string, error) {
 			}
 		}
 	}
+
 	forEachNode(doc, visitNode, nil)
+
 	return links, nil
 }
 
@@ -56,5 +60,3 @@ func forEachNode(n *html.Node, pre, post func(n *html.Node)) {
 		post(n)
 	}
 }
-
-
